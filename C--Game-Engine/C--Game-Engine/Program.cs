@@ -3,6 +3,8 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 //using OpenTK.Windowing.GraphicsLibraryFramework;
 using Shaders;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Window;
 
 namespace Engine
@@ -44,6 +46,7 @@ namespace Window
         };
 
         Shader? shader;
+        readonly Stopwatch _timer = Stopwatch.StartNew();
 
         public Game(int width, int height, string title)
             : base(GameWindowSettings.Default,
@@ -98,8 +101,7 @@ namespace Window
         {
             base.OnUnload();
 
-            if(shader != null)
-                shader.Dispose();
+            shader!.Dispose();
         }
 
         protected override void OnRenderFrame(FrameEventArgs args)
@@ -108,8 +110,16 @@ namespace Window
 
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
+            shader!.Use();
+
             //Code goes here
 
+            double timeValue = _timer.Elapsed.TotalSeconds;
+            float greenValue = (float)Math.Sin(timeValue) / (2.0f + 0.5f);
+            int vertexColorLocation = GL.GetUniformLocation(shader!.Handle, "color");
+            GL.Uniform4(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
+            GL.BindVertexArray(VertexArrayObject);
             GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
 
             SwapBuffers();
@@ -128,7 +138,7 @@ namespace Shaders
 {
     public class Shader : IDisposable
     {
-        readonly int Handle;
+        public readonly int Handle;
 
         public Shader(string vertexPath, string fragmentPath)
         {
