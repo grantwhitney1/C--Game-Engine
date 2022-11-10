@@ -29,11 +29,12 @@ namespace Window
     public class Game : GameWindow
     {
         int VertexBufferObject;
+        int VertexArrayObject;
         float[] vertices =
         {
             -0.5f, -0.5f, 0.0f, //Bottom-left
             0.5f, -0.5f, 0.0f, //Bottom-right
-            0.0f, 0.5f, 0.0f
+            0.0f, 0.5f, 0.0f //Top
         };
         Shader shader;
 
@@ -52,6 +53,12 @@ namespace Window
 
             shader = new Shader("../../../shader.vert", "../../../shader.frag");
 
+            VertexArrayObject = GL.GenVertexArray();
+
+            GL.UseProgram(VertexArrayObject);
+
+            GL.BindVertexArray(VertexArrayObject);
+
             VertexBufferObject = GL.GenBuffer();
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
@@ -60,11 +67,16 @@ namespace Window
                 vertices.Length * sizeof(float), vertices,
                 BufferUsageHint.StaticDraw);
 
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+            GL.EnableVertexAttribArray(0);
+
             /*
              *In order to limit VRAM usage, you can delete buffer like so:
              *GL.BindBuffer(BufferTarget.ArrayBuffer, 0); // 0 sets to null
              *GL.DeleteBuffer(VertexBufferObject);
              */
+
+            shader.Use();
             
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         }
@@ -83,6 +95,8 @@ namespace Window
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
             //Code goes here
+
+            GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 
             SwapBuffers();
         }
