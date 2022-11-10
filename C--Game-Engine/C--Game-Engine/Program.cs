@@ -1,7 +1,7 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
-using OpenTK.Windowing.GraphicsLibraryFramework;
+//using OpenTK.Windowing.GraphicsLibraryFramework;
 using Shaders;
 using Window;
 
@@ -11,15 +11,13 @@ namespace Engine
     {
         const double MAXFR = 60.0;
 
-        public static void Main(string[] args)
+        public static void Main()
         {
-            using (Game game = new Game(800, 600, "LearnOpenTK"))
-            {
-                game.RenderFrequency = MAXFR;
-                game.UpdateFrequency = MAXFR;
+            using Game game = new(800, 600, "LearnOpenTK");
+            game.RenderFrequency = MAXFR;
+            game.UpdateFrequency = MAXFR;
 
-                game.Run();
-            }
+            game.Run();
         }
     }
 }
@@ -30,7 +28,7 @@ namespace Window
     {
         int VertexBufferObject;
         int VertexArrayObject;
-        float[] vertices =
+        readonly float[] vertices =
         {
             -0.5f, -0.5f, 0.0f, //Bottom-left
             0.5f, -0.5f, 0.0f, //Bottom-right
