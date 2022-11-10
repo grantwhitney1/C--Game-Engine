@@ -27,6 +27,14 @@ namespace Window
 {
     public class Game : GameWindow
     {
+        int VertexBufferObject;
+        float[] vertices =
+        {
+            -0.5f, -0.5f, 0.0f, //Bottom-left
+            0.5f, -0.5f, 0.0f, //Bottom-right
+            0.0f, 0.5f, 0.0f
+        };
+
         public Game(int width, int height, string title)
             : base(GameWindowSettings.Default,
                   new NativeWindowSettings()
@@ -35,5 +43,36 @@ namespace Window
                       Title = title
                   })
         { }
+
+        protected override void OnLoad()
+        {
+            base.OnLoad();
+
+            VertexBufferObject = GL.GenBuffer();
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
+
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+            
+            GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        }
+
+        protected override void OnRenderFrame(FrameEventArgs args)
+        {
+            base.OnRenderFrame(args);
+
+            GL.Clear(ClearBufferMask.ColorBufferBit);
+
+            //Code goes here
+
+            SwapBuffers();
+        }
+
+        protected override void OnResize(ResizeEventArgs e)
+        {
+            base.OnResize(e);
+
+            GL.Viewport(0, 0, e.Width, e.Height);
+        }
     }
 }
