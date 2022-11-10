@@ -27,13 +27,22 @@ namespace Window
     public class Game : GameWindow
     {
         int VertexBufferObject;
+        int ElementBufferObject;
         int VertexArrayObject;
         readonly float[] vertices =
         {
-            -0.5f, -0.5f, 0.0f, //Bottom-left
-            0.5f, -0.5f, 0.0f, //Bottom-right
-            0.0f, 0.5f, 0.0f //Top
+            0.5f, 0.5f, 0.0f, //top right
+            0.5f, -0.5f, 0.0f, //bottom right
+            -0.5f, -0.5f, 0.0f, //bottom left
+            -0.5f, 0.5f, 0.0f //top left
         };
+
+        readonly uint[] indices =
+        {
+            0, 1, 3, //triangle 1
+            1, 2, 3 //triangle 2
+        };
+
         Shader? shader;
 
         public Game(int width, int height, string title)
@@ -49,7 +58,7 @@ namespace Window
         {
             base.OnLoad();
 
-            shader = new Shader("../../../shader.vert", "../../../shader.frag");
+            shader = new("../../../shader.vert", "../../../shader.frag");
 
             VertexArrayObject = GL.GenVertexArray();
 
@@ -60,6 +69,12 @@ namespace Window
             VertexBufferObject = GL.GenBuffer();
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
+
+            ElementBufferObject = GL.GenBuffer();
+
+            //Element Buffer Objects rely on Vertex Array Objects
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
 
             GL.BufferData(BufferTarget.ArrayBuffer,
                 vertices.Length * sizeof(float), vertices,
@@ -95,7 +110,7 @@ namespace Window
 
             //Code goes here
 
-            GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+            GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
 
             SwapBuffers();
         }
