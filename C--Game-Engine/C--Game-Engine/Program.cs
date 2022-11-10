@@ -36,7 +36,7 @@ namespace Window
             0.5f, -0.5f, 0.0f, //Bottom-right
             0.0f, 0.5f, 0.0f //Top
         };
-        Shader shader;
+        Shader? shader;
 
         public Game(int width, int height, string title)
             : base(GameWindowSettings.Default,
@@ -85,7 +85,8 @@ namespace Window
         {
             base.OnUnload();
 
-            shader.Dispose();
+            if(shader != null)
+                shader.Dispose();
         }
 
         protected override void OnRenderFrame(FrameEventArgs args)
@@ -114,7 +115,7 @@ namespace Shaders
 {
     public class Shader : IDisposable
     {
-        int Handle;
+        readonly int Handle;
 
         public Shader(string vertexPath, string fragmentPath)
         {
@@ -134,7 +135,7 @@ namespace Shaders
 
             GL.GetShader(VertexShader, ShaderParameter.CompileStatus, out int vsuccess);
 
-            if(vsuccess == 0)
+            if (vsuccess == 0)
             {
                 string infoLog = GL.GetShaderInfoLog(VertexShader);
                 Console.WriteLine(infoLog);
@@ -153,13 +154,13 @@ namespace Shaders
             Handle = GL.CreateProgram();
 
             GL.AttachShader(Handle, VertexShader);
-            GL.AttachShader (Handle, FragmentShader);
+            GL.AttachShader(Handle, FragmentShader);
 
             GL.LinkProgram(Handle);
 
             GL.GetProgram(Handle, GetProgramParameterName.LinkStatus, out int hsuccess);
 
-            if(hsuccess == 0)
+            if (hsuccess == 0)
             {
                 string infoLog = GL.GetProgramInfoLog(Handle);
                 Console.WriteLine(infoLog);
@@ -169,6 +170,11 @@ namespace Shaders
             GL.DetachShader(Handle, FragmentShader);
             GL.DeleteShader(FragmentShader);
             GL.DeleteShader(VertexShader);
+        }
+
+        public int GetAttributeLocation(string attribName)
+        {
+            return GL.GetAttribLocation(Handle, attribName);
         }
 
         public void Use()
