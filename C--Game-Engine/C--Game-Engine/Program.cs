@@ -1,23 +1,22 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
-//using OpenTK.Windowing.GraphicsLibraryFramework;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using Shaders;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using Window;
 
 namespace Engine
 {
     public class Program
     {
-        const double MAXFR = 60.0;
+        const double MAXFR = 60.0f;
 
         public static void Main()
         {
             using Game game = new(800, 600, "LearnOpenTK");
             game.RenderFrequency = MAXFR;
-            game.UpdateFrequency = MAXFR;
+            game.UpdateFrequency = 0.0f;
 
             game.Run();
         }
@@ -44,6 +43,14 @@ namespace Window
             0, 1, 3, //triangle 1
             1, 2, 3 //triangle 2
         };
+
+        int frames = 0;
+        double lastTime = GLFW.GetTime();
+        double thisTime;
+
+        int uframes = 0;
+        double ulastTime = GLFW.GetTime();
+        double uthisTime;
 
         Shader? shader;
         readonly Stopwatch _timer = Stopwatch.StartNew();
@@ -93,7 +100,7 @@ namespace Window
              */
 
             shader.Use();
-            
+
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         }
 
@@ -114,6 +121,16 @@ namespace Window
 
             //Code goes here
 
+            thisTime = GLFW.GetTime();
+            frames++;
+
+            if(thisTime - lastTime >= 1.0f)
+            {
+                Console.WriteLine(frames + " fps");
+                frames = 0;
+                lastTime = thisTime;
+            }
+
             double timeValue = _timer.Elapsed.TotalSeconds;
             float greenValue = (float)Math.Sin(timeValue) / (2.0f + 0.5f);
             int vertexColorLocation = GL.GetUniformLocation(shader!.Handle, "color");
@@ -123,6 +140,21 @@ namespace Window
             GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
 
             SwapBuffers();
+        }
+
+        protected override void OnUpdateFrame(FrameEventArgs args)
+        {
+            base.OnUpdateFrame(args);
+
+            uthisTime = GLFW.GetTime();
+            uframes++;
+
+            if (uthisTime - ulastTime >= 1.0f)
+            {
+                Console.WriteLine(uframes + " fps");
+                uframes = 0;
+                ulastTime = uthisTime;
+            }
         }
 
         protected override void OnResize(ResizeEventArgs e)
@@ -209,7 +241,7 @@ namespace Shaders
 
         protected virtual void Dispose(bool disposing)
         {
-            if(!disposedValue)
+            if (!disposedValue)
             {
                 GL.DeleteProgram(Handle);
 
