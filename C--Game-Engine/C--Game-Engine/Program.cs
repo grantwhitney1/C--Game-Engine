@@ -30,12 +30,12 @@ namespace Window
         int VertexBufferObject;
         int ElementBufferObject;
         int VertexArrayObject;
-        readonly float[] vertices =
+        float[] vertices =
         {
-            0.5f, 0.5f, 0.0f, //top right
-            0.5f, -0.5f, 0.0f, //bottom right
-            -0.5f, -0.5f, 0.0f, //bottom left
-            -0.5f, 0.5f, 0.0f //top left
+             1.0f,  1.0f, 0.0f,  1.0f, 0.0f, 0.0f, //top right
+             1.0f, -1.0f, 0.0f,  0.0f, 1.0f, 0.0f, //bottom right
+            -1.0f, -1.0f, 0.0f,  1.0f, 1.0f, 1.0f, //bottom left
+            -1.0f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f  //top left
         };
 
         readonly uint[] indices =
@@ -49,11 +49,11 @@ namespace Window
         double thisTime;
 
         int uframes = 0;
+        int deg = 0;
         double ulastTime = GLFW.GetTime();
         double uthisTime;
 
         Shader? shader;
-        readonly Stopwatch _timer = Stopwatch.StartNew();
 
         public Game(int width, int height, string title)
             : base(GameWindowSettings.Default,
@@ -88,10 +88,13 @@ namespace Window
 
             GL.BufferData(BufferTarget.ArrayBuffer,
                 vertices.Length * sizeof(float), vertices,
-                BufferUsageHint.StaticDraw);
+                BufferUsageHint.DynamicDraw);
 
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 0);
             GL.EnableVertexAttribArray(0);
+
+            GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 12);
+            GL.EnableVertexAttribArray(1);
 
             /*
              *In order to limit VRAM usage, you can delete buffer like so:
@@ -119,7 +122,85 @@ namespace Window
 
             shader!.Use();
 
+            GL.BufferData(BufferTarget.ArrayBuffer,
+                vertices.Length * sizeof(float), vertices,
+                BufferUsageHint.DynamicDraw);
+
             //Code goes here
+            
+            if (deg < 90)
+            {
+                vertices[3] -= 1.0f / 90.0f; //r to b
+                vertices[5] += 1.0f / 90.0f;
+
+                vertices[10] -= 1.0f / 90.0f; //g to r
+                vertices[9] += 1.0f / 90.0f;
+
+                vertices[15] -= 1.0f / 90.0f; //w to g
+                vertices[17] -= 1.0f / 90.0f;
+
+                vertices[22] += 1.0f / 90.0f; //b to w
+                vertices[21] += 1.0f / 90.0f;
+            }
+            else if (deg >= 90 && deg < 180)
+            {
+                vertices[4] += 1.0f / 90.0f; //b to w
+                vertices[3] += 1.0f / 90.0f;
+
+                vertices[9] -= 1.0f / 90.0f; // r to b
+                vertices[11] += 1.0f / 90.0f;
+
+                vertices[16] -= 1.0f / 90.0f; // g to r
+                vertices[15] += 1.0f / 90.0f;
+
+                vertices[21] -= 1.0f / 90.0f; // w to g
+                vertices[23] -= 1.0f / 90.0f;
+            }
+            else if (deg >= 180 && deg < 270)
+            {
+                vertices[3] -= 1.0f / 90.0f; //w to g
+                vertices[5] -= 1.0f / 90.0f;
+
+                vertices[10] += 1.0f / 90.0f; //b to w
+                vertices[9] += 1.0f / 90.0f;
+
+                vertices[15] -= 1.0f / 90.0f; //r to b
+                vertices[17] += 1.0f / 90.0f;
+
+                vertices[22] -= 1.0f / 90.0f; //g to r
+                vertices[21] += 1.0f / 90.0f;
+            }
+            else if (deg >= 270 && deg < 360)
+            {
+                vertices[4] -= 1.0f / 90.0f; //g to r
+                vertices[3] += 1.0f / 90.0f;
+
+                vertices[9] -= 1.0f / 90.0f; //w to g
+                vertices[11] -= 1.0f / 90.0f;
+
+                vertices[16] += 1.0f / 90.0f; //b to w
+                vertices[15] += 1.0f / 90.0f;
+
+                vertices[21] -= 1.0f / 90.0f; //r to b
+                vertices[23] += 1.0f / 90.0f;
+            }
+            else if (deg >= 360)
+            {
+                vertices[3] -= 1.0f / 90.0f; //r to b
+                vertices[5] += 1.0f / 90.0f;
+
+                vertices[10] -= 1.0f / 90.0f; //g to r
+                vertices[9] += 1.0f / 90.0f;
+
+                vertices[15] -= 1.0f / 90.0f; //w to g
+                vertices[17] -= 1.0f / 90.0f;
+
+                vertices[22] += 1.0f / 90.0f; //b to w
+                vertices[21] += 1.0f / 90.0f;
+                deg = 0;
+            }
+
+            deg++;
 
             thisTime = GLFW.GetTime();
             frames++;
@@ -130,11 +211,6 @@ namespace Window
                 frames = 0;
                 lastTime = thisTime;
             }
-
-            double timeValue = _timer.Elapsed.TotalSeconds;
-            float greenValue = (float)Math.Sin(timeValue) / (2.0f + 0.5f);
-            int vertexColorLocation = GL.GetUniformLocation(shader!.Handle, "color");
-            GL.Uniform4(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
 
             GL.BindVertexArray(VertexArrayObject);
             GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
@@ -148,6 +224,17 @@ namespace Window
 
             uthisTime = GLFW.GetTime();
             uframes++;
+
+            if(KeyboardState.IsKeyPressed(Keys.F))
+            {
+                if(!IsFullscreen)
+                    WindowState = WindowState.Fullscreen;
+                else
+                {
+                    WindowState = WindowState.Normal;
+                    Size = new (800, 600);
+                }
+            }
 
             if (uthisTime - ulastTime >= 1.0f)
             {
