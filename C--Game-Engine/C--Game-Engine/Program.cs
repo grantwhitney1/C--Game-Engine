@@ -3,6 +3,7 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Shaders;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using Window;
 
@@ -14,9 +15,10 @@ namespace Engine
 
         public static void Main()
         {
-            using Game game = new(800, 600, "LearnOpenTK");
+            using Game game = new(800, 800, "LearnOpenTK");
             game.RenderFrequency = MAXFR;
             game.UpdateFrequency = 0.0f;
+            game.AspectRatio = new(1, 1);
 
             game.Run();
         }
@@ -30,28 +32,15 @@ namespace Window
         int VertexBufferObject;
         int ElementBufferObject;
         int VertexArrayObject;
-        float[] vertices =
-        {
-             1.0f,  1.0f, 0.0f,  1.0f, 0.0f, 0.0f, //top right
-             1.0f, -1.0f, 0.0f,  0.0f, 1.0f, 0.0f, //bottom right
-            -1.0f, -1.0f, 0.0f,  1.0f, 1.0f, 1.0f, //bottom left
-            -1.0f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f  //top left
-        };
-
-        readonly uint[] indices =
-        {
-            0, 1, 3, //triangle 1
-            1, 2, 3 //triangle 2
-        };
-
         int frames = 0;
-        double lastTime = GLFW.GetTime();
-        double thisTime;
 
-        int uframes = 0;
-        int deg = 0;
-        double ulastTime = GLFW.GetTime();
-        double uthisTime;
+        static int triangles = 360;
+        const double TWICE_PI = 2.0f * (float)Math.PI;
+
+        // [x0][y0][z0][r0][g0][b0]...
+        float[] vertices = new float[(triangles + 1) * 6];
+        // [index0][index1]...
+        uint[] indices = new uint[(triangles) * 3];
 
         Shader? shader;
 
@@ -62,7 +51,152 @@ namespace Window
                       Size = (width, height),
                       Title = title
                   })
-        { }
+        {
+            {
+                int j = 0;
+                for (int i = 0; i < (triangles + 1) * 6; i++)
+                {
+                    switch (i % 6)
+                    {
+                        case 0:
+                            if (i == (triangles + 1) * 6 - 6)
+                                vertices[i] = 0.0f;
+                            else
+                                vertices[i] = (float)Math.Cos(TWICE_PI * (double)j / (double)triangles);
+                            break;
+                        case 1:
+                            if (i == (triangles + 1) * 6 - 5)
+                                vertices[i] = 0.0f;
+                            else
+                                vertices[i] = (float)Math.Sin(TWICE_PI * (double)j / (double)triangles);
+                            break;
+                        case 2:
+                            vertices[i] = 1.0f;
+                            if (i == (triangles + 1) * 6 - 4)
+                                vertices[i] = 1.0f;
+                            j++;
+                            break;
+                        //RGB
+                        case 3:
+
+                            if((float)i / (((float)triangles + 1.0f) * 6.0f) <= (1.0f / 3.0f))
+                            {
+                                vertices[i] = 1.0f - (float)i / (((float)triangles + 1.0f) * 2.0f);
+                            }
+                            else if ((float)i / (((float)triangles + 1.0f) * 6.0f) > (1.0f / 3.0f)
+                                && (float)i / (((float)triangles + 1.0f) * 6.0f) <= (2.0f / 3.0f))
+                            {
+                                vertices[i] = 0.0f;
+                            }
+                            else if ((float)i / (((float)triangles + 1.0f) * 6.0f) > 2.0f / 3.0f)
+                            {
+                                vertices[i] = 0.0f + ((float)i - 2 * (((float)triangles + 1.0f) * 2.0f)) / (((float)triangles + 1.0f) * 2.0f);
+                            }
+
+                            //CENTER == WHITE
+                            if (i == (triangles + 1) * 6 - 3)
+                                vertices[i] = 1.0f;
+                            break;
+                        case 4:
+
+                            if ((float)i / (((float)triangles + 1.0f) * 6.0f) <= (1.0f / 3.0f))
+                            {
+                                vertices[i] = 0.0f + (float)i / (((float)triangles + 1.0f) * 2.0f);
+                            }
+                            else if((float)i / (((float)triangles + 1.0f) * 6.0f) > (1.0f / 3.0f)
+                                && (float)i / (((float)triangles + 1.0f) * 6.0f) <= (2.0f / 3.0f))
+                            {
+                                vertices[i] = 1.0f - ((float)i - (((float)triangles + 1.0f) * 2.0f)) / (((float)triangles + 1.0f) * 2.0f);
+                            }
+                            else if ((float)i / (((float)triangles + 1.0f) * 6.0f) > 2.0f / 3.0f)
+                            {
+                                vertices[i] = 0.0f;
+                            }
+
+                            //CENTER == WHITE
+                            if (i == (triangles + 1) * 6 - 2)
+                                vertices[i] = 1.0f;
+                            break;
+                        case 5:
+
+                            if ((float)i / (((float)triangles + 1.0f) * 6.0f) <= (1.0f / 3.0f))
+                            {
+                                vertices[i] = 0.0f;
+                            }
+                            else if ((float)i / (((float)triangles + 1.0f) * 6.0f) > (1.0f / 3.0f)
+                                && (float)i / (((float)triangles + 1.0f) * 6.0f) <= (2.0f / 3.0f))
+                            {
+                                vertices[i] = 0.0f + ((float)i - (((float)triangles + 1.0f) * 2.0f)) / (((float)triangles + 1.0f) * 2.0f);
+                            }
+                            else if((float)i / (((float)triangles + 1.0f) * 6.0f) > 2.0f / 3.0f)
+                            {
+                                vertices[i] = 1.0f - ((float)i - 2 * (((float)triangles + 1.0f) * 2.0f)) / (((float)triangles + 1.0f) * 2.0f);
+                            }
+
+                            //CENTER == WHITE
+                            if (i == (triangles + 1) * 6 - 1)
+                                vertices[i] = 1.0f;
+                            break;
+                    }
+                }
+            }
+
+            {
+                int i = 0;
+                foreach (float x in vertices)
+                {
+                    Console.Write(x + " ");
+                    if ((i + 1) % 3 == 0)
+                        Console.WriteLine();
+                    i++;
+                }
+            }
+
+            /*
+             * 41, 0, 1
+             * 41, 1, 2,
+             * 41, 2, 3,
+             * ...
+             * 41, 40, 0,
+             * 
+             */
+
+            {
+                uint j = 0;
+
+                for (uint i = 0; i < (triangles) * 3; i++)
+                {
+                    switch (i % 3)
+                    {
+                        case 0:
+                            indices[i] = (uint)triangles;
+                            break;
+                        case 1:
+                            indices[i] = j;
+                            if (j < triangles - 1)
+                                j++;
+                            else
+                                j = 0;
+                            break;
+                        case 2:
+                            indices[i] = j;
+                            break;
+                    }
+                }
+            }
+
+            {
+                int i = 0;
+                foreach (float x in indices)
+                {
+                    Console.Write(x + " ");
+                    if ((i + 1) % 3 == 0)
+                        Console.WriteLine();
+                    i++;
+                }
+            }
+
+        }
 
         protected override void OnLoad()
         {
@@ -82,19 +216,13 @@ namespace Window
 
             ElementBufferObject = GL.GenBuffer();
 
-            //Element Buffer Objects rely on Vertex Array Objects
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
+
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+
             GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
 
-            GL.BufferData(BufferTarget.ArrayBuffer,
-                vertices.Length * sizeof(float), vertices,
-                BufferUsageHint.DynamicDraw);
-
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 0);
-            GL.EnableVertexAttribArray(0);
-
-            GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 12);
-            GL.EnableVertexAttribArray(1);
+            //Element Buffer Objects rely on Vertex Array Objects
 
             /*
              *In order to limit VRAM usage, you can delete buffer like so:
@@ -102,9 +230,15 @@ namespace Window
              *GL.DeleteBuffer(VertexBufferObject);
              */
 
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 0);
+            GL.EnableVertexAttribArray(0);
+
+            GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 3 * sizeof(float));
+            GL.EnableVertexAttribArray(1);
+
             shader.Use();
 
-            GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+            GL.ClearColor(0.3f, 0.3f, 0.3f, 1.0f);
         }
 
         protected override void OnUnload()
@@ -127,103 +261,56 @@ namespace Window
                 BufferUsageHint.DynamicDraw);
 
             //Code goes here
-            
-            if (deg < 90)
+
+            if(frames < 180)
             {
-                vertices[3] -= 1.0f / 90.0f; //r to b
-                vertices[5] += 1.0f / 90.0f;
-
-                vertices[10] -= 1.0f / 90.0f; //g to r
-                vertices[9] += 1.0f / 90.0f;
-
-                vertices[15] -= 1.0f / 90.0f; //w to g
-                vertices[17] -= 1.0f / 90.0f;
-
-                vertices[22] += 1.0f / 90.0f; //b to w
-                vertices[21] += 1.0f / 90.0f;
+                vertices[vertices.Length - 1] -= 1.0f / 180.0f;
+                vertices[vertices.Length - 2] -= 1.0f / 180.0f;
+                vertices[vertices.Length - 3] -= 1.0f / 180.0f;
             }
-            else if (deg >= 90 && deg < 180)
+            else if(frames >= 180 && frames < 360)
             {
-                vertices[4] += 1.0f / 90.0f; //b to w
-                vertices[3] += 1.0f / 90.0f;
-
-                vertices[9] -= 1.0f / 90.0f; // r to b
-                vertices[11] += 1.0f / 90.0f;
-
-                vertices[16] -= 1.0f / 90.0f; // g to r
-                vertices[15] += 1.0f / 90.0f;
-
-                vertices[21] -= 1.0f / 90.0f; // w to g
-                vertices[23] -= 1.0f / 90.0f;
+                vertices[vertices.Length - 1] += 1.0f / 180.0f;
+                vertices[vertices.Length - 2] += 1.0f / 180.0f;
+                vertices[vertices.Length - 3] += 1.0f / 180.0f;
             }
-            else if (deg >= 180 && deg < 270)
+            else if(frames >= 360)
             {
-                vertices[3] -= 1.0f / 90.0f; //w to g
-                vertices[5] -= 1.0f / 90.0f;
-
-                vertices[10] += 1.0f / 90.0f; //b to w
-                vertices[9] += 1.0f / 90.0f;
-
-                vertices[15] -= 1.0f / 90.0f; //r to b
-                vertices[17] += 1.0f / 90.0f;
-
-                vertices[22] -= 1.0f / 90.0f; //g to r
-                vertices[21] += 1.0f / 90.0f;
-            }
-            else if (deg >= 270 && deg < 360)
-            {
-                vertices[4] -= 1.0f / 90.0f; //g to r
-                vertices[3] += 1.0f / 90.0f;
-
-                vertices[9] -= 1.0f / 90.0f; //w to g
-                vertices[11] -= 1.0f / 90.0f;
-
-                vertices[16] += 1.0f / 90.0f; //b to w
-                vertices[15] += 1.0f / 90.0f;
-
-                vertices[21] -= 1.0f / 90.0f; //r to b
-                vertices[23] += 1.0f / 90.0f;
-            }
-            else if (deg >= 360)
-            {
-                vertices[3] -= 1.0f / 90.0f; //r to b
-                vertices[5] += 1.0f / 90.0f;
-
-                vertices[10] -= 1.0f / 90.0f; //g to r
-                vertices[9] += 1.0f / 90.0f;
-
-                vertices[15] -= 1.0f / 90.0f; //w to g
-                vertices[17] -= 1.0f / 90.0f;
-
-                vertices[22] += 1.0f / 90.0f; //b to w
-                vertices[21] += 1.0f / 90.0f;
-                deg = 0;
+                frames = 0;
+                vertices[vertices.Length - 1] -= 1.0f / 180.0f;
+                vertices[vertices.Length - 2] -= 1.0f / 180.0f;
+                vertices[vertices.Length - 3] -= 1.0f / 180.0f;
             }
 
-            deg++;
+            for(int i = 3; i < vertices.Length - 6; i += 6)
+            {
+                if (i + 6 >= vertices.Length - 4)
+                {
+                    Console.WriteLine("Debug");
+                    vertices[i] = vertices[3];
+                    vertices[i + 1] = vertices[4];
+                    vertices[i + 2] = vertices[5];
+                }
+                else
+                {
+                    vertices[i] = vertices[i + 6];
+                    vertices[i + 1] = vertices[i + 7];
+                    vertices[i + 2] = vertices[i + 8];
+                }
+            }
 
-            thisTime = GLFW.GetTime();
             frames++;
 
-            if(thisTime - lastTime >= 1.0f)
-            {
-                Console.WriteLine(frames + " fps");
-                frames = 0;
-                lastTime = thisTime;
-            }
-
             GL.BindVertexArray(VertexArrayObject);
-            GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
 
+            GL.DrawElements(PrimitiveType.TriangleFan, indices.Length, DrawElementsType.UnsignedInt, 0);
+            
             SwapBuffers();
         }
 
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
             base.OnUpdateFrame(args);
-
-            uthisTime = GLFW.GetTime();
-            uframes++;
 
             if(KeyboardState.IsKeyPressed(Keys.F))
             {
@@ -234,13 +321,6 @@ namespace Window
                     WindowState = WindowState.Normal;
                     Size = new (800, 600);
                 }
-            }
-
-            if (uthisTime - ulastTime >= 1.0f)
-            {
-                Console.WriteLine(uframes + " fps");
-                uframes = 0;
-                ulastTime = uthisTime;
             }
         }
 
